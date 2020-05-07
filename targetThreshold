@@ -1,0 +1,38 @@
+function[statsTargets, binTargets] = targetThreshold(Pic);
+
+  % these lines initialize outputs to empty stufff 
+  statsTargets = []; % empty array 
+  binTargets = {}; % empty cell arra
+  
+  bin = createMask3(Pic); % find orange
+
+  binFill = imfill(bin,'holes'); % fill holes
+  
+  minArea = 2; % how'd you pick this number?
+  binMinArea = bwareaopen(bin,minArea);
+       % screen out any tiny things that are probably false detections
+  
+  [lbl,n] = bwlabel(bin); % This line labels the connected components regions
+  stats = regionprops(lbl,'All'); % this line gets stats for each region
+  
+  if (length(stats) == 0);
+    disp('NO target'); % check if we got nothin... 
+
+  else  
+    maxArea = 200000; % 140x140 pixel max size of target?
+    minArea= 200; % 24x24ish minimum size of target
+    minEcc = 0; % perfectly round
+    maxEcc = 1; % ?
+    idx = find(...
+		[stats.Area] >= minArea & ...
+		[stats.Eccentricity] <= maxEcc);
+      % after this line, idx holds indices of ones that are big enough
+      % and round enough
+    
+    statsTargets = stats(idx); % select only stats for possible targets
+    for i= 1:numel(idx)
+      binTargets{i} = lbl == idx(1);
+	    % form cell array of binary images of each possible target
+    end % for
+  end % if else
+end % function
